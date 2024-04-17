@@ -17,10 +17,10 @@ cd gdscript-transpiler
 This isn't meant to be used by regular Godot devs yet.
 
 ## Roadmap
-[X] Proof of Concept
-[ ] Addon
-[ ] MVP (a little useable)
-[ ] Useable (pass all godot tests)
+- [X] Proof of Concept
+- [ ] Addon
+- [ ] MVP (a little useable)
+- [ ] Useable (pass all godot tests)
 
 
 ## License
