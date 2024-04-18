@@ -19,7 +19,9 @@ class_name Test
 extends Node
 
 func test(test_arg: int) -> int:
-    return 5
+    var test_var := 0
+    test_var = test_arg
+    return test_var
 
 ";
     
@@ -37,6 +39,6 @@ func test(test_arg: int) -> int:
     let ast = ast.unwrap().0.into_iter().map(|(node, _)| node).collect();
 
     let code = rust_generator.generate(ast);
-    fs::write("example.rs", code).unwrap();
+    fs::write("gdext-lib/src/example.rs", code).unwrap();
     Command::new("rustfmt").args(["example.rs"]).spawn().unwrap().wait().unwrap();
 }

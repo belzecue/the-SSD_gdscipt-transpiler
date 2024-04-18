@@ -99,6 +99,17 @@ impl {class_name} {{
 
                 format!("return {expr};")
             }
+            Node::InitVar { var } => {
+                let value = if let Some(e) = var.default_value {
+                    self.generate_expr(e)
+                } else {
+                    "None".to_owned()
+                };
+
+                format!("let mut {} = {};", var.name, value)
+            }
+            Node::SetVar { name, op, value } => format!("{name} {op} {};", self.generate_expr(value)),
+            
 
             Node::Expr(expr) => self.generate_expr(expr) + ";",
             Node::Break => { "break;".to_string() }
