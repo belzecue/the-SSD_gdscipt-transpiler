@@ -1,15 +1,14 @@
 use std::{fs, process::Command};
 
 use chumsky::prelude::*;
-use generator::Generator;
 
 mod ast;
 mod lexer;
 mod parser;
-mod generator;
+mod transformer;
 
 fn main() {
-    let mut rust_generator = Generator::new();
+    let mut rust_generator = transformer::Generator::new();
 
     let src = "
 #[autocompile]
@@ -20,7 +19,8 @@ extends Node
 
 func test(test_arg: int) -> int:
     var test_var := 0
-    test_var = test_arg
+    if test_arg == 5:
+        test_var = 1
     return test_var
 
 ";
@@ -36,9 +36,12 @@ func test(test_arg: int) -> int:
 
     dbg!(/*&tokens,*/ &errs, /*&ast,*/ &parse_errs);
     
-    let ast = ast.unwrap().0.into_iter().map(|(node, _)| node).collect();
+    let ast: Vec<_> = ast.unwrap().0.into_iter().map(|(node, _)| node).collect();
 
     let code = rust_generator.generate(ast);
-    fs::write("gdext-lib/src/example.rs", code).unwrap();
-    Command::new("rustfmt").args(["example.rs"]).spawn().unwrap().wait().unwrap();
+    let path = "gdext-lib/src/example.rs";
+    fs::write(path, code).unwrap();
+    Command::new("cargo").args(["clippy", "--allow-dirty", "--manifest-path", "gdext-lib/Cargo.toml", "--fix"]).spawn().unwrap().wait().unwrap();
+    Command::new("rustfmt").args([path]).spawn().unwrap().wait().unwrap();
+
 }

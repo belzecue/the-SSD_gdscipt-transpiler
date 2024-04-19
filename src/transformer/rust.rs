@@ -2,15 +2,11 @@ use crate::ast::*;
 
 
 #[derive(Default)]
-pub struct Generator {
-    
-}
+pub struct Generator { }
 
 impl Generator {
     pub fn new() -> Self {
-        Self { 
-            
-        }
+        Self { }
     }
 
     pub fn generate(&mut self, ast: Vec<TLNode>) -> String {
@@ -70,10 +66,11 @@ impl {class_name} {{
 ")
     }
 
+
     fn convert_type(&self, input: Type) -> String {
         match input {
-            Type::None => todo!(),
-            Type::Auto => String::new(),
+            Type::None => "Option<Gd<Variant>>".to_owned(),
+            Type::Auto => "_".into(),
             Type::Some(t) => match t.as_str() {
                 "int" => "i64".to_string(),
                 "float" => "f64".to_string(),
@@ -85,11 +82,13 @@ impl {class_name} {{
     fn generate_variable(&self, var: Variable) -> String {
         let name = var.name;
         let type_ = self.convert_type(var.type_);
+        assert!(var.default_value.is_none(), "not supported yet");
+
         format!("{name}: {type_}")
     }
 
     fn generate_node(&self, node: Node) -> String {
-        match node {
+        let mut node = match node {
             Node::Return { body } => {
                 let expr = if let Some(body) = body {
                     self.generate_expr(body)
@@ -97,34 +96,82 @@ impl {class_name} {{
                     "".to_string()
                 };
 
-                format!("return {expr};")
+                format!("return {expr}")
             }
             Node::InitVar { var } => {
+                let type_ = self.convert_type(var.type_);
                 let value = if let Some(e) = var.default_value {
                     self.generate_expr(e)
                 } else {
                     "None".to_owned()
                 };
 
-                format!("let mut {} = {};", var.name, value)
+                format!("let mut {}: {type_} = {}", var.name, value)
             }
-            Node::SetVar { name, op, value } => format!("{name} {op} {};", self.generate_expr(value)),
             
+            Node::SetVar { name, op, value } => format!("{name} {op} {}", self.generate_expr(value)),
+            
+            Node::If { condition, body, elif, or_else } => {
 
-            Node::Expr(expr) => self.generate_expr(expr) + ";",
-            Node::Break => { "break;".to_string() }
-            Node::Continue => { "continue;".to_string() }
+                let cond = self.generate_expr(condition);
+                let mut body_string = String::new();
+                for node in body {
+                    body_string += &self.generate_node(node);
+                }
+
+
+                let mut else_if = String::new();
+                for (cond, body) in elif {
+                    let cond = self.generate_expr(cond);
+                    let mut body_string = String::new();
+                    for node in body {
+                        body_string += &self.generate_node(node);
+                    }
+
+                    else_if += &format!("else if {cond} {{ {body_string} }}");
+                }
+
+
+                let mut else_ = String::new();
+                if let Some(or_else) = or_else {
+                    for node in or_else {
+                        else_ += &self.generate_node(node);
+                    }
+                }
+
+                format!("if {cond} {{ {body_string} }} {else_if} else {{ {else_} }}")
+            }
+
+            Node::Expr(expr) => self.generate_expr(expr),
+            Node::Break => { "break".to_string() }
+            Node::Continue => { "continue".to_string() }
             _ => todo!()
+        };
+
+        if !node.ends_with("}") {
+            node += ";";
         }
+        
+        node
     }
 
     fn generate_expr(&self, expr: Expr) -> String {
         match expr {
             Expr::Number(n) => n.to_string(),
             Expr::FPNumber(n) => n.to_string(),
-            Expr::Variable(var) => if var == "pass" { "".to_string() } else { var },
+            Expr::Variable(var) => {
+                match var.as_str() {
+                    "pass" => "",
+                    var => var
+                }.to_owned()
+            },
 
             Expr::Neg(expr) => "-".to_string() + &self.generate_expr(*expr),
+            Expr::Op { lhs, op, rhs } => {
+                //FIXME: This is wrong. Bracets need to be added
+                format!("{} {op} {}", self.generate_expr(*lhs), self.generate_expr(*rhs))
+            }
+
             _ => todo!()
         }
     }

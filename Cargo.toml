@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 chumsky = { git = "https://github.com/zesterer/chumsky.git", features = ["pratt"] }
+#syn = { version = "2.0.60", features = ["full", "extra-traits", "clone-impls", "printing"] }
+#quote = "1.0.36"
