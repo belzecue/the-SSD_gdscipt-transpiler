@@ -1,4 +1,4 @@
-use std::{fs, process::Command};
+use std::{env, fs, process::{Command, Stdio}};
 
 use chumsky::prelude::*;
 
@@ -8,24 +8,10 @@ mod parser;
 mod transformer;
 
 fn main() {
-    let mut rust_generator = transformer::Generator::new();
 
-    let src = "
-#[autocompile]
-# adding line above should make addon recompile this file when it is updated
-
-class_name Test
-extends Node
-
-func test(test_arg: int) -> int:
-    var test_var := 0
-    if test_arg == 5:
-        test_var = 1
-    return test_var
-
-";
+    let src = fs::read_to_string("gdext-lib/src/example.gd").unwrap();
     
-    let (tokens, errs) = lexer::lexer().parse(src).into_output_errors();
+    let (tokens, errs) = lexer::lexer().parse(&src).into_output_errors();
 
     let tokens = lexer::insert_deindents(tokens).unwrap();
 
@@ -38,10 +24,13 @@ func test(test_arg: int) -> int:
     
     let ast: Vec<_> = ast.unwrap().0.into_iter().map(|(node, _)| node).collect();
 
-    let code = rust_generator.generate(ast);
+    //let mut rust_generator = transformer::Generator::new();
+    //let code = rust_generator.generate(ast);
+    let code = transformer::rust_ast::get_rust_src(ast);
     let path = "gdext-lib/src/example.rs";
     fs::write(path, code).unwrap();
-    Command::new("cargo").args(["clippy", "--allow-dirty", "--manifest-path", "gdext-lib/Cargo.toml", "--fix"]).spawn().unwrap().wait().unwrap();
+    env::set_var("__CARGO_FIX_YOLO", "1");
+    Command::new("cargo").args(["clippy", "--allow-dirty", "--manifest-path", "gdext-lib/Cargo.toml", "--fix"]).stderr(Stdio::null()).spawn().unwrap().wait().unwrap();
     Command::new("rustfmt").args([path]).spawn().unwrap().wait().unwrap();
 
 }

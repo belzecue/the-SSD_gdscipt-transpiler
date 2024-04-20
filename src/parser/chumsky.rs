@@ -124,13 +124,13 @@ let product = unary.clone()
                 condition, 
                 body,
                 elif,
-                or_else
+                or_else: or_else.unwrap_or(vec![])
             }
         });
 
         let return_ = token!(Identifier, "return")
         .ignore_then(expr.clone().or_not())
-        .map(|body| Node::Return { body });
+        .map(|body| Node::Return(body));
 
         let init_var = 
             token!(Identifier, "var")

@@ -89,7 +89,7 @@ impl {class_name} {{
 
     fn generate_node(&self, node: Node) -> String {
         let mut node = match node {
-            Node::Return { body } => {
+            Node::Return(body) => {
                 let expr = if let Some(body) = body {
                     self.generate_expr(body)
                 } else {
@@ -99,14 +99,18 @@ impl {class_name} {{
                 format!("return {expr}")
             }
             Node::InitVar { var } => {
-                let type_ = self.convert_type(var.type_);
+                let type_ = match self.convert_type(var.type_).as_str() {
+                    "_" => String::new(),
+                    t => ": ".to_string() + t,
+                };
+                
                 let value = if let Some(e) = var.default_value {
                     self.generate_expr(e)
                 } else {
                     "None".to_owned()
                 };
 
-                format!("let mut {}: {type_} = {}", var.name, value)
+                format!("let mut {} {type_} = {}", var.name, value)
             }
             
             Node::SetVar { name, op, value } => format!("{name} {op} {}", self.generate_expr(value)),
@@ -133,10 +137,8 @@ impl {class_name} {{
 
 
                 let mut else_ = String::new();
-                if let Some(or_else) = or_else {
-                    for node in or_else {
-                        else_ += &self.generate_node(node);
-                    }
+                for node in or_else {
+                    else_ += &self.generate_node(node);
                 }
 
                 format!("if {cond} {{ {body_string} }} {else_if} else {{ {else_} }}")
@@ -151,7 +153,7 @@ impl {class_name} {{
         if !node.ends_with("}") {
             node += ";";
         }
-        
+
         node
     }
 

@@ -7,7 +7,7 @@ pub enum Expr {
     Variable(String),
     
     Neg(Box<Expr>),
-    //BitNeg(Box<Expr>),
+    BitNeg(Box<Expr>),
     Op {
         lhs: Box<Expr>,
         //op_code: OpCode,
@@ -165,7 +165,7 @@ pub enum Node {
         condition: Expr,
         body: Vec<Node>,
         elif: Vec<(Expr, Vec<Node>)>,
-        or_else: Option<Vec<Node>>
+        or_else: Vec<Node>
     },
 
     // Not implemented in compiler
@@ -202,12 +202,13 @@ pub enum Node {
     },*/
 
     Expr(Expr),
-
-    Return {
-        body: Option<Expr>,
-    },
+    Return(Option<Expr>),
 
     Continue,
     Break,
+
+    // Used to presurve spacing and vibes
+    NewLine,
+    Comment(String),
 
 }
