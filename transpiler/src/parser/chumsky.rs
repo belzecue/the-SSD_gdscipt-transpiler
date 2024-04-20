@@ -2,7 +2,9 @@ use chumsky::prelude::*;
 use chumsky::pratt::*;
 
 use crate::ast::Iterator;
-use crate::{ast::{Expr, Node, TLNode, Variable}, lexer::{Span, Token}};
+use crate::ast::{Expr, Node, TLNode, Variable};
+use crate::lexer::Span;
+use crate::lexer::Token;
 
 pub type Spanned<T> = (T, Span);
 type ParserInput<'a> =
