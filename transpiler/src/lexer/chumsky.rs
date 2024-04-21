@@ -1,41 +1,8 @@
-use std::fmt::Display;
-
 use chumsky::prelude::*;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Token {
-    Identifier(String),
-    Anotation(String),
-    String(String),
-    Number(u64),
-    FPNumber(f64),
+use super::Token;
 
-    Op(String),
-    Ctrl(String),
 
-    Ident,
-    DeIdent,
-    NewLine,
-
-}
-
-impl Display for Token {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Token::Number(n) => write!(f, "{}", n),
-            Token::FPNumber(n) => write!(f, "{}", n),
-
-            Token::Identifier(i) => write!(f, "{}", i),
-            Token::Anotation(a) => write!(f, "{}", a),
-            Token::String(s) => write!(f, "{}", s),
-            Token::Op(s) => write!(f, "{}", s),
-            Token::Ctrl(c) => write!(f, "{}", c),
-
-            Token::Ident => write!(f, "{}", '\t'),
-            Token::DeIdent | Token::NewLine => { Ok(()) }
-        }
-    }
-}
 
 
 /*
