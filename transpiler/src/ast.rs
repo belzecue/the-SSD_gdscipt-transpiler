@@ -1,11 +1,9 @@
-
-
 #[derive(Debug, Clone)]
 pub enum Expr {
     Number(u64),
     FPNumber(f64),
     Variable(String),
-    
+
     Neg(Box<Expr>),
     BitNeg(Box<Expr>),
     Op {
@@ -15,15 +13,16 @@ pub enum Expr {
         rhs: Box<Expr>,
     },
 
-    Call(String, Vec<Expr>),
-
+    Call {
+        name: String,
+        args: Vec<Expr>,
+    },
     // Subscription x[index]
     // Attribute reference thing.x
     // if
     // Lambda
-    
-    // A lot more
 
+    // A lot more
 }
 /*
 #[derive(Debug, Clone)]
@@ -39,11 +38,7 @@ pub enum OpCode {
 
 #[derive(Debug, Clone)]
 pub enum Iterator {
-    Range {
-        start: u64,
-        step: u64,
-        end: u64,
-    },
+    Range { start: u64, step: u64, end: u64 },
     /*Array {
         // TODO
     }*/
@@ -51,7 +46,7 @@ pub enum Iterator {
 /*
 impl Iterator {
     pub fn start_val(&self, var_name: &str) -> Vec<Node> {
-        let value = 
+        let value =
         match self {
             Iterator::Range { start, step: _, end: _ } => Expr::Number(*start)
         };
@@ -62,7 +57,7 @@ impl Iterator {
     }
 
     pub fn condition(&self, var_name: &str) -> Expr {
-        let value = 
+        let value =
         match self {
             Iterator::Range { start: _, step: _, end } => end
         };
@@ -71,7 +66,7 @@ impl Iterator {
     }
 
     pub fn step(&self, var_name: &str) -> Vec<Node> {
-        let value = 
+        let value =
         match self {
             Iterator::Range { start: _, step, end: _ } => step
         };
@@ -85,14 +80,14 @@ pub struct Variable {
     pub name: String,
     // 1st is if to auto detect type, 2nd is type
     pub type_: Type,
-    pub default_value: Option<Expr>
+    pub default_value: Option<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     None,
     Auto,
-    Some(String)
+    Some(String),
 }
 
 impl From<Option<Option<String>>> for Type {
@@ -100,7 +95,7 @@ impl From<Option<Option<String>>> for Type {
         match value {
             Some(Some(t)) => Type::Some(t),
             Some(None) => Type::Auto,
-            None => Type::None
+            None => Type::None,
         }
     }
 }
@@ -108,7 +103,7 @@ impl From<Option<String>> for Type {
     fn from(value: Option<String>) -> Self {
         match value {
             Some(t) => Type::Some(t),
-            None => Type::None
+            None => Type::None,
         }
     }
 }
@@ -119,7 +114,7 @@ pub enum TLNode {
         name: String,
         args: Vec<Variable>,
         return_type: Type,
-        body: Vec<Node>
+        body: Vec<Node>,
     },
 
     // Not implemented in compiler
@@ -150,37 +145,37 @@ pub enum TLNode {
     Annotation {
         body: Box<TLNode>,
     }*/
-
     // signal
     // static
     // preload?
     // await yield
 
+    // Used to presurve spacing and vibes
+    NewLine,
+    Comment(String),
 }
 
 #[derive(Debug, Clone)]
 pub enum Node {
-
     If {
         condition: Expr,
         body: Vec<Node>,
         elif: Vec<(Expr, Vec<Node>)>,
-        or_else: Vec<Node>
+        or_else: Vec<Node>,
     },
 
     // Not implemented in compiler
     For {
         var_name: String,
         iterator: Iterator,
-        body: Vec<Node>
+        body: Vec<Node>,
     },
 
     // Not implemented in compiler
     While {
         condition: Expr,
-        body: Vec<Node>
+        body: Vec<Node>,
     },
-
 
     InitVar {
         var: Variable,
@@ -189,18 +184,17 @@ pub enum Node {
     SetVar {
         name: String,
         op: String,
-        value: Expr
+        value: Expr,
     },
 
     /*Match {
         // TODO
     },
-    
+
     Const {
         name: String,
         value: Expr
     },*/
-
     Expr(Expr),
     Return(Option<Expr>),
 
@@ -210,5 +204,4 @@ pub enum Node {
     // Used to presurve spacing and vibes
     NewLine,
     Comment(String),
-
 }

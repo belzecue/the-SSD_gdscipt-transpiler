@@ -3,6 +3,7 @@ pub mod handwritten;
 
 use std::fmt::Display;
 //pub use chumsky::*;
+pub use handwritten::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
@@ -17,7 +18,7 @@ pub enum Token {
     Op(String),
     Ctrl(String),
 
-    Ident,
+    Indent,
     DeIdent,
     NewLine,
     Comment(String),
@@ -38,7 +39,7 @@ impl Display for Token {
             Token::Op(s) => write!(f, "{}", s),
             Token::Ctrl(c) => write!(f, "{}", c),
 
-            Token::Ident | Token::DeIdent | Token::NewLine => Ok(()),
+            Token::Indent | Token::DeIdent | Token::NewLine => Ok(()),
             Token::Comment(c) => write!(f, "{}", c),
         }
     }

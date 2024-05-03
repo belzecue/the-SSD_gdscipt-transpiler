@@ -15,19 +15,24 @@ const CTRL_OR_OP_POS1: [char; 23] = [
     '<', '>', '=', '!',
 ];
 
-pub struct Tokenizer {
+const OPERATORS: [&str; 34] = [
+    "+", "-", "*", "**", "/", "%", "~", "&", "|", "^", "<<", ">>", "=", "+=", "-=", "*=", "**=",
+    "/=", "%=", "~=", "&=", "|=", "^=", "<<=", ">>=", "<", ">", "!", "&&", "||", "<=", ">=", "!=",
+    "==",
+];
+
+const CTRL: [&str; 11] = ["(", ")", ":", ",", "{", "}", ";", ".", "[", "]", "->"];
+
+pub struct Lexer {
     pos: usize,
     chars: Vec<char>,
-
-    src: String,
 }
 
-impl Tokenizer {
-    pub fn new(input: String) -> Tokenizer {
-        Tokenizer {
+impl Lexer {
+    pub fn new(input: &str) -> Self {
+        Self {
             pos: 0,
             chars: input.chars().collect(),
-            src: input,
         }
     }
 
@@ -47,18 +52,13 @@ impl Tokenizer {
         let mut indent = 0;
 
         while let Some(char) = self.peek() {
-            if !self.src.is_char_boundary(self.pos) {
-                self.pos += 1;
-                continue;
-            }
-
             let start_pos = self.pos;
             let mut skip = false;
 
             let token = match char {
                 '0'..='9' => self.number(),
                 '#' => self.comment(),
-                '\'' | '"' => self.string(),
+                '\'' | '"' => self.string(false),
                 '\n' => {
                     indent = self.indent(indent, &mut tokens);
                     skip = true;
@@ -66,10 +66,11 @@ impl Tokenizer {
                 }
                 '$' => self.get_node(),
                 '@' => self.anotation(),
-                // Identifier or raw string
-                c if is_xid_start(c) || c == '_' => self.ident(),
 
                 c if CTRL_OR_OP_POS1.contains(&c) => self.ctrl_or_op(c),
+
+                // Identifier or raw string
+                c if is_xid_start(c) || c == '_' => self.ident(),
 
                 ' ' | '\t' => {
                     skip = true;
@@ -110,6 +111,10 @@ impl Tokenizer {
         tokens
     }
 
+    fn slice(&self, start: usize, end: usize) -> String {
+        self.chars[start..end].iter().cloned().collect::<String>()
+    }
+
     fn number(&mut self) -> Token {
         let start = self.pos;
         let mut is_float = self.peek().unwrap() == '.';
@@ -127,7 +132,7 @@ impl Tokenizer {
             }
         }
 
-        let str = &self.src[start..self.pos];
+        let str = self.slice(start, self.pos);
 
         if is_float {
             Token::FPNumber(str.parse().unwrap())
@@ -145,12 +150,10 @@ impl Tokenizer {
             }
         }
 
-        let str = &self.src[start..self.pos];
-
-        Token::Comment(str.to_string())
+        Token::Comment(self.slice(start, self.pos))
     }
 
-    fn string(&mut self) -> Token {
+    fn string(&mut self, raw_string: bool) -> Token {
         let start = self.pos;
 
         let start_char = self.peek().unwrap();
@@ -160,40 +163,37 @@ impl Tokenizer {
                 // it wasn't a triple it was an empty string
                 return Token::String(String::new());
             }
+        } else {
+            self.pos -= 1;
         }
 
+        //self.next();
         while let Some(char) = self.next() {
-            if !self.src.is_char_boundary(self.pos) {
-                continue;
-            }
-
             if char == start_char {
+                self.pos += 1;
                 if is_tripple {
                     if self.next().unwrap() == start_char {
-                        if self.next().unwrap() == start_char {
+                        if self.next().unwrap() != start_char {
                             break;
                         }
+                        self.pos -= 1;
                     }
+                    self.pos -= 1;
                 } else {
                     break;
                 }
             } else if char == '\\' {
-                self.next();
+                let next = self.next();
+                if raw_string && next != Some(start_char) && next != Some('\\') {
+                    self.pos -= 1;
+                }
             }
         }
 
-        self.next();
-        /*while let Some(_) = self.next() {
-            if self.src.is_char_boundary(self.pos) {
-                break;
-            }
-        }*/
-
         let offset = if is_tripple { 3 } else { 1 };
-        //println!("TEST {}", self.chars[start + 3]);
-        let str = &self.src[start + offset..self.pos - offset];
+        let str = self.slice(start + offset, self.pos - offset);
 
-        Token::String(str.to_string())
+        Token::String(str)
     }
 
     fn indent(&mut self, current_indent: usize, tokens: &mut Vec<Token>) -> usize {
@@ -223,7 +223,7 @@ impl Tokenizer {
 
         if new_indent > current_indent {
             for _ in current_indent..new_indent {
-                tokens.push(Token::Ident);
+                tokens.push(Token::Indent);
             }
         } else if new_indent < current_indent {
             for _ in new_indent..current_indent {
@@ -236,7 +236,7 @@ impl Tokenizer {
 
     fn get_node(&mut self) -> Token {
         if let Some('"') = self.next() {
-            let string = self.string();
+            let string = self.string(true);
             if let Token::String(str) = string {
                 return Token::GetNode(str);
             }
@@ -246,40 +246,34 @@ impl Tokenizer {
         let start = self.pos + 1;
 
         while let Some(c) = self.next() {
-            if !self.src.is_char_boundary(self.pos) {
-                continue;
-            }
             if !is_xid_continue(c) && c != '/' {
                 break;
             }
         }
 
-        let str = &self.src[start..self.pos];
-        Token::GetNode(str.to_string())
+        let str = self.slice(start, self.pos);
+        Token::GetNode(str)
     }
 
     fn anotation(&mut self) -> Token {
         let start = self.pos + 1;
 
         while let Some(c) = self.next() {
-            if !self.src.is_char_boundary(self.pos) {
-                continue;
-            }
             if !is_xid_continue(c) {
                 break;
             }
         }
 
-        let str = &self.src[start..self.pos];
+        let str = self.slice(start, self.pos);
 
-        Token::Anotation(str.to_string())
+        Token::Anotation(str)
     }
 
     fn ident(&mut self) -> Token {
         if self.peek().unwrap() == 'r' {
             if let Some(char) = self.next() {
                 if char == '\'' || char == '"' {
-                    let string = self.string();
+                    let string = self.string(true);
                     if let Token::String(str) = string {
                         return Token::RawString(str);
                     }
@@ -291,25 +285,18 @@ impl Tokenizer {
         let start = self.pos;
 
         while let Some(char) = self.next() {
-            /*if !self.src.is_char_boundary(self.pos) {
-                continue;
-            }*/
             if !is_xid_continue(char) {
                 break;
             }
         }
-        /*while let Some(_) = self.next() {
-            if !self.src.is_char_boundary(self.pos) {
-                break;
-            }
-        }*/
 
-        let str = &self.src[start..self.pos];
-        Token::Identifier(str.to_string())
+        let str = self.slice(start, self.pos);
+
+        Token::Identifier(str)
     }
 
     fn ctrl_or_op(&mut self, c: char) -> Token {
-        // Sometimes floats star with .
+        // Sometimes floats star with '.'
         if self.peek().unwrap() == '.' {
             if let Some(c) = self.next() {
                 if c.is_digit(10) {
@@ -319,14 +306,40 @@ impl Tokenizer {
             }
         }
 
-        // TODO OP
-        if let Some(c) = self.next() {
-            if c == '>' {
-                self.next();
-                return Token::Ctrl("->".to_string());
-            }
+        if CTRL.contains(&c.to_string().as_str()) {
+            return Token::Ctrl(c.to_string());
         }
 
-        Token::Ctrl(c.to_string())
+        let Some(p2) = self.next() else {
+            panic!();
+        };
+
+        // handel ->
+        if p2 == '>' {
+            self.next();
+            return Token::Ctrl("->".to_string());
+        }
+
+        let Some(p3) = self.next() else {
+            panic!();
+        };
+
+        let mut op_string = String::new();
+        op_string.push(c);
+        op_string.push(p2);
+        op_string.push(p3);
+
+        if !OPERATORS.contains(&op_string.as_str()) {
+            op_string.remove(op_string.len() - p3.len_utf8());
+
+            if !OPERATORS.contains(&op_string.as_str()) {
+                op_string.remove(op_string.len() - p2.len_utf8());
+            }
+
+            if !OPERATORS.contains(&op_string.as_str()) {
+                panic!()
+            }
+        }
+        return Token::Op(op_string);
     }
 }
