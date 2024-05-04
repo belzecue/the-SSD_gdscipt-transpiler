@@ -1,5 +1,4 @@
 use gdscript_transpiler::*;
-//use chumsky::prelude::*;
 
 fn run_test(path: &str) {
     let src = std::fs::read_to_string(path).unwrap();
