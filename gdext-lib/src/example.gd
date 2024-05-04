@@ -10,5 +10,7 @@ extends Node
 #    return test_var
 
 func test() -> int:
-    for i in range(1, 11):
-        pass
+    var a
+    var b: int
+    var b2: int = 1
+    var c := 0

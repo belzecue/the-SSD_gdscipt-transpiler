@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Clone)]
 pub enum Expr {
     Number(u64),
@@ -107,6 +109,7 @@ impl From<Option<String>> for Type {
         }
     }
 }
+
 /// Top level node
 #[derive(Debug, Clone)]
 pub enum TLNode {

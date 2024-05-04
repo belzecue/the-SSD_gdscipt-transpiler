@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Expr, Iterator, Node, TLNode, Type},
+    ast::{Expr, Iterator, Node, TLNode, Type, Variable},
     lexer::Token,
 };
 
@@ -293,7 +293,7 @@ impl<'a> Parser<'a> {
                     self.next();
                     return lhs;
                 }
-                _ => panic!(),
+                op => panic!("{op}"),
             },
 
             t => panic!("{t:?}"),
@@ -362,7 +362,41 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_init_var(&mut self) -> Option<Node> {
-        todo!()
+        let Some(Token::Identifier(var_name)) = self.next() else {
+            panic!();
+        };
+
+        let mut next = self.next();
+
+        let type_ = if next == Some(Token::Ctrl(":".into())) {
+            next = self.next();
+            if next != Some(Token::Op("=".into())) {
+                self.pos -= 1;
+                let t = self.parse_type();
+                next = self.next();
+                t
+            } else {
+                Type::Auto
+            }
+        } else {
+            Type::None
+        };
+
+        let default_value = if next == Some(Token::Op("=".into())) {
+            self.next();
+            Some(self.parse_expr())
+        } else {
+            None
+        };
+
+        self.next();
+
+        let var = Variable {
+            name: var_name,
+            type_,
+            default_value,
+        };
+        Some(Node::InitVar { var })
     }
 
     fn parse_if(&mut self) -> Option<Node> {
@@ -418,7 +452,6 @@ impl<'a> Parser<'a> {
             }
 
             peek_ctrl!(self, ")");
-            //self.next();
 
             Iterator::Range { start, step, end }
         } else if let Some(Token::Number(num)) = next {
