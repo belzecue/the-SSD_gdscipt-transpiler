@@ -1,11 +1,21 @@
 use crate::{
-    ast::{Expr, Node, TLNode, Type},
+    ast::{Expr, Iterator, Node, TLNode, Type},
     lexer::Token,
 };
 
-macro_rules! ctrl {
+macro_rules! then_ctrl {
     ($self: tt, $str: literal) => {
         if let Some(Token::Ctrl(a)) = $self.next() {
+            assert_eq!(&a, $str)
+        } else {
+            panic!()
+        };
+    };
+}
+
+macro_rules! peek_ctrl {
+    ($self: tt, $str: literal) => {
+        if let Some(Token::Ctrl(a)) = $self.peek() {
             assert_eq!(&a, $str)
         } else {
             panic!()
@@ -20,7 +30,6 @@ macro_rules! then {
         };
     };
 }
-
 /*
 macro_rules! peek_is {
     ($self: tt, $tok: tt) => {
@@ -90,9 +99,9 @@ impl<'a> Parser<'a> {
             panic!()
         };
 
-        ctrl!(self, "(");
+        then_ctrl!(self, "(");
         // TODO
-        ctrl!(self, ")");
+        then_ctrl!(self, ")");
 
         let type_ = if let Some(Token::Ctrl(ctrl)) = self.next() {
             if &ctrl == "->" {
@@ -105,7 +114,7 @@ impl<'a> Parser<'a> {
             Type::None
         };
 
-        ctrl!(self, ":");
+        then_ctrl!(self, ":");
 
         then!(self, NewLine);
         then!(self, Indent);
@@ -287,7 +296,7 @@ impl<'a> Parser<'a> {
                 _ => panic!(),
             },
 
-            _ => panic!(),
+            t => panic!("{t:?}"),
         };
 
         self.pos += 1;
@@ -322,7 +331,6 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_block(&mut self) -> Vec<Node> {
-        //peek_is!(self, Indent);
         self.next();
 
         let mut body = vec![];
@@ -334,11 +342,7 @@ impl<'a> Parser<'a> {
             }
 
             if let Some(node) = self.parse_node(&tok) {
-                if let Node::Block(body2) = node {
-                    body.extend(body2.into_iter())
-                } else {
-                    body.push(node);
-                }
+                body.push(node);
             }
 
             if self.pos == start {
@@ -346,6 +350,13 @@ impl<'a> Parser<'a> {
             }
         }
         self.next();
+
+        // If body is just a single block then unwrap it
+        if body.len() == 1 {
+            if let Node::Block(body2) = body[0].clone() {
+                body = body2;
+            }
+        }
 
         body
     }
@@ -363,7 +374,71 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_for(&mut self) -> Option<Node> {
-        todo!()
+        let Some(Token::Identifier(var_name)) = self.next() else {
+            panic!();
+        };
+
+        assert_eq!(Token::Identifier("in".into()), self.next().unwrap());
+
+        let next = self.next();
+
+        let iterator = if Some(Token::Identifier("range".into())) == next {
+            then_ctrl!(self, "(");
+            self.next();
+
+            let mut start = match self.parse_expr() {
+                Expr::Number(num) => num,
+                _ => panic!(),
+            };
+            let step;
+            let end;
+
+            if Some(Token::Ctrl(",".into())) == self.peek() {
+                self.next();
+
+                end = match self.parse_expr() {
+                    Expr::Number(num) => num,
+                    _ => panic!(),
+                };
+
+                if Some(Token::Ctrl(",".into())) == self.peek() {
+                    self.next();
+
+                    step = match self.parse_expr() {
+                        Expr::Number(num) => num,
+                        _ => panic!(),
+                    };
+                } else {
+                    step = 1;
+                };
+            } else {
+                end = start;
+                start = 0;
+                step = 1;
+            }
+
+            peek_ctrl!(self, ")");
+            //self.next();
+
+            Iterator::Range { start, step, end }
+        } else if let Some(Token::Number(num)) = next {
+            Iterator::Range {
+                start: 0,
+                step: 1,
+                end: num,
+            }
+        } else {
+            panic!("{:?}", self.peek())
+        };
+
+        then_ctrl!(self, ":");
+        then!(self, NewLine);
+
+        Some(Node::For {
+            var_name,
+            iterator,
+            body: self.parse_block(),
+        })
     }
 
     fn parse_return(&mut self) -> Option<Node> {
