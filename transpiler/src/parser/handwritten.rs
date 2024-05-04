@@ -426,7 +426,15 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_while(&mut self) -> Option<Node> {
-        todo!()
+        self.next();
+        let condition = self.parse_expr();
+
+        peek_ctrl!(self, ":");
+        then!(self, NewLine);
+
+        let body = self.parse_block();
+
+        Some(Node::While { condition, body })
     }
 
     fn parse_for(&mut self) -> Option<Node> {

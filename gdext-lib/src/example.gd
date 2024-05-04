@@ -10,5 +10,5 @@ extends Node
 #    return test_var
 
 func test() -> int:
-    if 1 == 0:
+    while 1 == 0:
         pass
