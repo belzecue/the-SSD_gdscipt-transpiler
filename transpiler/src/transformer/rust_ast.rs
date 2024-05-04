@@ -124,11 +124,16 @@ impl Display for Stmt {
                     else_if_str += &format!("else if {cond} {{\n {} }}\n", body.to_string());
                 }
 
+                let or_else = if or_else.len() == 0 {
+                    "".into()
+                } else {
+                    format!("else {{\n {} }}\n", or_else.to_string())
+                };
+
                 write!(
                     f,
-                    "if {condition} {{\n {} }}\n {else_if_str} else {{\n {} }}\n",
-                    body.to_string(),
-                    or_else.to_string()
+                    "if {condition} {{\n {} }}\n {else_if_str} {or_else}",
+                    body.to_string()
                 )
             }
             Stmt::For {

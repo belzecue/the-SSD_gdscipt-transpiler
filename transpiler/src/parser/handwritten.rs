@@ -400,7 +400,29 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_if(&mut self) -> Option<Node> {
-        todo!()
+        self.next();
+        let condition = self.parse_expr();
+
+        peek_ctrl!(self, ":");
+        then!(self, NewLine);
+
+        let body = self.parse_block();
+
+        // TODO elif and else
+        /*if let Some(Token::Identifier(ident)) = self.next() {
+            if ident == "elif" {
+
+            } else if ident == "else" {
+
+            }
+        };*/
+
+        Some(Node::If {
+            condition,
+            body,
+            elif: vec![],
+            or_else: vec![],
+        })
     }
 
     fn parse_while(&mut self) -> Option<Node> {

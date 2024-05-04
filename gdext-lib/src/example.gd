@@ -10,7 +10,5 @@ extends Node
 #    return test_var
 
 func test() -> int:
-    var a
-    var b: int
-    var b2: int = 1
-    var c := 0
+    if 1 == 0:
+        pass
