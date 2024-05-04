@@ -107,6 +107,7 @@ impl<'a> Parser<'a> {
             if &ctrl == "->" {
                 self.parse_type()
             } else {
+                self.pos -= 1;
                 Type::None
             }
         } else {
@@ -261,12 +262,12 @@ impl<'a> Parser<'a> {
                         let expr = self.parse_expr();
                         args.push(expr);
 
-                        if Token::Ctrl(",".to_string()) == self.peek().unwrap() {
-                            self.next();
-                        } else {
+                        if Token::Ctrl(",".to_string()) != self.peek().unwrap() {
                             break;
                         }
+                        self.next();
                     }
+                    self.next();
 
                     return Expr::Call {
                         name: identifier,
@@ -511,7 +512,18 @@ impl<'a> Parser<'a> {
     }
 
     fn parser_set_var_or_expr(&mut self) -> Option<Node> {
-        // TODO set var
-        Some(Node::Expr(self.parse_expr()))
+
+        let Some(Token::Identifier(name)) = self.peek() else {
+            return Some(Node::Expr(self.parse_expr()));
+        };
+
+        if let Some(Token::Op(op)) = self.next() {
+            self.next();
+            let value = self.parse_expr();
+            Some(Node::SetVar { name, op, value })
+        } else {
+            self.pos -= 1;
+            Some(Node::Expr(self.parse_expr()))
+        }
     }
 }
