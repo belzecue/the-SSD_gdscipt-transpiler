@@ -63,6 +63,10 @@ impl ToString for Vec<Stmt> {
 }
 
 pub enum Stmt {
+    Block {
+        body: Vec<Stmt>,
+    },
+
     If {
         condition: Expr,
         body: Vec<Stmt>,
@@ -105,7 +109,10 @@ pub enum Stmt {
 impl Display for Stmt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Stmt::Expr(expr) => write!(f, "{expr};"),
+            Stmt::Block { body } => {
+                write!(f, "{{\n{}}}\n", body.to_string())
+            }
+            Stmt::Expr(expr) => write!(f, "{expr};\n"),
             Stmt::If {
                 condition,
                 body,
@@ -159,6 +166,10 @@ impl Display for Stmt {
 impl From<Node> for Stmt {
     fn from(value: Node) -> Self {
         match value {
+            Node::Block(body) => Stmt::Block {
+                body: body.into_iter().map(|n| n.into()).collect(),
+            },
+
             Node::If {
                 condition,
                 body,
@@ -280,7 +291,7 @@ impl Display for Item {
             } => {
                 write!(
                     f,
-                    "fn {name}{} -> {return_type} {{\n {} }}\n",
+                    "fn {name}{} -> {return_type} {{\n {} \n}}\n",
                     args.to_string(),
                     body.to_string()
                 )

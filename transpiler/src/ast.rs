@@ -157,6 +157,9 @@ pub enum TLNode {
 
 #[derive(Debug, Clone)]
 pub enum Node {
+    // This is needed when we have Indent {stuff} Deindent
+    Block(Vec<Node>),
+
     If {
         condition: Expr,
         body: Vec<Node>,
@@ -164,14 +167,12 @@ pub enum Node {
         or_else: Vec<Node>,
     },
 
-    // Not implemented in compiler
     For {
         var_name: String,
         iterator: Iterator,
         body: Vec<Node>,
     },
 
-    // Not implemented in compiler
     While {
         condition: Expr,
         body: Vec<Node>,

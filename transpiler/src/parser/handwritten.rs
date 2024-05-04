@@ -21,13 +21,14 @@ macro_rules! then {
     };
 }
 
+/*
 macro_rules! peek_is {
     ($self: tt, $tok: tt) => {
         let Some(Token::$tok) = $self.peek() else {
             panic!()
         };
     };
-}
+}*/
 
 pub struct Parser<'a> {
     tokens: &'a Vec<Token>,
@@ -73,9 +74,14 @@ impl<'a> Parser<'a> {
             },
             Token::Anotation(_) => todo!(),
 
-            Token::Comment(c) => TLNode::Comment(c),
+            Token::Comment(c) => {
+                if self.next() == Some(Token::NewLine) {
+                    self.next();
+                }
+                TLNode::Comment(c)
+            }
             Token::NewLine => TLNode::NewLine,
-            _ => panic!(),
+            t => panic!("{t:?}"),
         }
     }
 
@@ -88,22 +94,24 @@ impl<'a> Parser<'a> {
         // TODO
         ctrl!(self, ")");
 
-        if let Some(Token::Ctrl(ctrl)) = self.next() {
+        let type_ = if let Some(Token::Ctrl(ctrl)) = self.next() {
             if &ctrl == "->" {
-                self.parse_type();
+                self.parse_type()
+            } else {
+                Type::None
             }
         } else {
             self.pos -= 1;
-        }
+            Type::None
+        };
 
         ctrl!(self, ":");
 
         then!(self, NewLine);
         then!(self, Indent);
 
-        let mut body = vec![];
+        /*let mut body = vec![];
         while let Some(tok) = self.peek() {
-            // TODO this is wrong
             let start = self.pos;
 
             if Token::DeIdent == tok {
@@ -117,19 +125,26 @@ impl<'a> Parser<'a> {
             if self.pos == start {
                 self.pos += 1;
             }
-        }
+        }*/
+
+        let body = self.parse_block();
 
         TLNode::Function {
             name: func_name,
             args: vec![],
-            return_type: Type::Auto,
+            return_type: type_,
             body,
         }
     }
 
-    fn parse_type(&mut self) {
+    fn parse_type(&mut self) -> Type {
         // TODO
-        self.next();
+        let next = self.next();
+        if let Some(Token::Identifier(ident)) = next {
+            Type::Some(ident)
+        } else {
+            Type::Auto
+        }
     }
 
     fn parse_class_name(&mut self) -> TLNode {
@@ -138,7 +153,9 @@ impl<'a> Parser<'a> {
         };
         self.pos += 1;
 
-        //then!(self, NewLine);
+        if self.peek() == Some(Token::NewLine) {
+            self.next();
+        }
 
         TLNode::ClassName(class_name)
     }
@@ -149,7 +166,9 @@ impl<'a> Parser<'a> {
         };
         self.pos += 1;
 
-        //then!(self, NewLine);
+        if self.peek() == Some(Token::NewLine) {
+            self.next();
+        }
 
         TLNode::Extends(extends)
     }
@@ -166,17 +185,12 @@ impl<'a> Parser<'a> {
                 "return" => self.parse_return(),
                 _ => self.parser_set_var_or_expr(),
             },
-            Token::Indent => {
-                let tok = self.next().unwrap();
-                let result = self.parse_node(&tok);
-
-                peek_is!(self, DeIdent);
-                self.pos += 1;
-                result
-            }
+            Token::Indent => Some(Node::Block(self.parse_block())),
+            Token::DeIdent => None,
             n => panic!("{n}"),
         };
-        //println!("{:?}", self.peek());
+
+        println!("{:?}: {:?}: {}: {:?}", self.peek(), ret, self.pos, tok);
 
         if let Some(Token::NewLine) = self.peek() {
             self.pos += 1;
@@ -305,6 +319,35 @@ impl<'a> Parser<'a> {
         };
 
         Some(res)
+    }
+
+    fn parse_block(&mut self) -> Vec<Node> {
+        //peek_is!(self, Indent);
+        self.next();
+
+        let mut body = vec![];
+        while let Some(tok) = self.peek() {
+            let start = self.pos;
+
+            if Token::DeIdent == tok {
+                break;
+            }
+
+            if let Some(node) = self.parse_node(&tok) {
+                if let Node::Block(body2) = node {
+                    body.extend(body2.into_iter())
+                } else {
+                    body.push(node);
+                }
+            }
+
+            if self.pos == start {
+                self.pos += 1;
+            }
+        }
+        self.next();
+
+        body
     }
 
     fn parse_init_var(&mut self) -> Option<Node> {

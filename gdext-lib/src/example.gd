@@ -11,3 +11,4 @@ extends Node
 
 func test() -> int:
     pass
+    pass

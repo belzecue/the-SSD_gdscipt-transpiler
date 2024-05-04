@@ -20,7 +20,7 @@ fn main() {
     dbg!(&ast);
 
     let rust_src = transformer::rust_ast::get_rust_src(ast);
-
+    println!("{rust_src}");
     /*let path = "gdext-lib/src/example.rs";
     fs::write(path, rust_src).unwrap();
 
