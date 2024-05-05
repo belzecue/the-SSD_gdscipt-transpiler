@@ -200,7 +200,9 @@ impl Lexer {
         let mut new_indent = 0;
 
         // skip empty lines
-        while let Some('\n') = self.next() {}
+        while let Some('\n') = self.next() {
+            tokens.push(Token::NewLine);
+        }
         self.pos -= 1;
 
         while let Some(char) = self.next() {
@@ -209,7 +211,6 @@ impl Lexer {
                 new_indent += 1;
             } else if char == '#' {
                 tokens.push(self.comment());
-                tokens.push(Token::NewLine);
                 new_indent = 0;
             } else if char == '\\' {
                 while let Some(' ' | '\t') = self.next() {}

@@ -83,12 +83,7 @@ impl<'a> Parser<'a> {
             },
             Token::Anotation(_) => todo!(),
 
-            Token::Comment(c) => {
-                if self.next() == Some(Token::NewLine) {
-                    self.next();
-                }
-                TLNode::Comment(c)
-            }
+            Token::Comment(c) => TLNode::Comment(c),
             Token::NewLine => TLNode::NewLine,
             t => panic!("{t:?}"),
         }
@@ -119,23 +114,6 @@ impl<'a> Parser<'a> {
 
         then!(self, NewLine);
         then!(self, Indent);
-
-        /*let mut body = vec![];
-        while let Some(tok) = self.peek() {
-            let start = self.pos;
-
-            if Token::DeIdent == tok {
-                break;
-            }
-
-            if let Some(node) = self.parse_node(&tok) {
-                body.push(node);
-            }
-
-            if self.pos == start {
-                self.pos += 1;
-            }
-        }*/
 
         let body = self.parse_block();
 
@@ -197,14 +175,18 @@ impl<'a> Parser<'a> {
             },
             Token::Indent => Some(Node::Block(self.parse_block())),
             Token::DeIdent => None,
-            n => panic!("{n}"),
+
+            Token::Comment(c) => Some(Node::Comment(c.to_string())),
+            Token::NewLine => Some(Node::NewLine),
+
+            t => panic!("not expected: {t:?}"),
         };
 
-        println!("{:?}: {:?}: {}: {:?}", self.peek(), ret, self.pos, tok);
+        //println!("{:?}: {:?}: {}: {:?}", self.peek(), ret, self.pos, tok);
 
-        if let Some(Token::NewLine) = self.peek() {
+        /*if let Some(Token::NewLine) = self.peek() {
             self.pos += 1;
-        }
+        }*/
         ret
     }
 
@@ -280,6 +262,14 @@ impl<'a> Parser<'a> {
             }
 
             Token::Op(sp) => match sp.as_str() {
+                "+" => {
+                    let ((), r_bp) = self.prefix_binding_power(&sp);
+
+                    self.next();
+
+                    let rhs = self.parse_expr_bp(r_bp);
+                    return rhs;
+                }
                 "-" => {
                     let ((), r_bp) = self.prefix_binding_power(&sp);
 
@@ -287,6 +277,14 @@ impl<'a> Parser<'a> {
 
                     let rhs = self.parse_expr_bp(r_bp);
                     return Expr::Neg(Box::new(rhs));
+                }
+                "~" => {
+                    let ((), r_bp) = self.prefix_binding_power(&sp);
+
+                    self.next();
+
+                    let rhs = self.parse_expr_bp(r_bp);
+                    return Expr::BitNeg(Box::new(rhs));
                 }
                 "(" => {
                     self.next();
@@ -306,7 +304,7 @@ impl<'a> Parser<'a> {
 
     fn prefix_binding_power(&self, op: &str) -> ((), u8) {
         match op {
-            "+" | "-" | "!" => ((), 10),
+            "+" | "-" | "!" | "~"=> ((), 10),
 
             _ => panic!("bad op: {:?}", op),
         }
@@ -506,8 +504,15 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_return(&mut self) -> Option<Node> {
-        // TODO return with viod
-        let expr = Some(self.parse_expr());
+
+        let next = self.next();
+        let expr = if Some(Token::NewLine) != next && Some(Token::DeIdent) != next {
+            Some(self.parse_expr())
+        } else {
+            self.next();
+            None
+        };
+
         Some(Node::Return(expr))
     }
 
@@ -516,6 +521,11 @@ impl<'a> Parser<'a> {
         let Some(Token::Identifier(name)) = self.peek() else {
             return Some(Node::Expr(self.parse_expr()));
         };
+
+        if name == "pass" {
+            self.next();
+            return None;
+        }
 
         if let Some(Token::Op(op)) = self.next() {
             self.next();
