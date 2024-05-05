@@ -439,7 +439,9 @@ impl<'a> Parser<'a> {
         let mut elif = vec![];
         let mut or_else = vec![];
 
-        /*while let Some(Token::Identifier(ident)) = self.next() {
+        while let Some(Token::Identifier(ident)) = self.peek() {
+            let start = self.pos;
+
             if ident == "elif" {
                 self.next();
                 let cond = self.parse_expr();
@@ -454,9 +456,14 @@ impl<'a> Parser<'a> {
                 then!(self, NewLine);
 
                 or_else = self.parse_block();
+            } else {
+                break;
+            }
+
+            if start == self.pos {
+                self.pos += 1;
             }
         }
-        self.pos -= 1;*/
         
 
         Some(Node::If {
