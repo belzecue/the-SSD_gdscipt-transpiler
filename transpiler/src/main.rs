@@ -14,7 +14,7 @@ fn main() {
     let src = fs::read_to_string("gdext-lib/src/example.gd").unwrap();
 
     let tokens = lexer::Lexer::new(&src).lex();
-    dbg!(&tokens);
+    dbg!(tokens.iter().enumerate().collect::<Vec<_>>());
 
     let ast = parser::Parser::new(&tokens).parse();
     dbg!(&ast);

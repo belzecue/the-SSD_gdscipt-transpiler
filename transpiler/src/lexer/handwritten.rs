@@ -105,7 +105,7 @@ impl Lexer {
 
         while indent > 0 {
             indent -= 1;
-            tokens.push(Token::DeIdent)
+            tokens.push(Token::DeIndent)
         }
 
         tokens
@@ -199,6 +199,7 @@ impl Lexer {
     fn indent(&mut self, current_indent: usize, tokens: &mut Vec<Token>) -> usize {
         let mut new_indent = 0;
 
+        tokens.push(Token::NewLine);
         // skip empty lines
         while let Some('\n') = self.next() {
             tokens.push(Token::NewLine);
@@ -213,14 +214,17 @@ impl Lexer {
                 tokens.push(self.comment());
                 new_indent = 0;
             } else if char == '\\' {
-                while let Some(' ' | '\t') = self.next() {}
+                while let Some(' ' | '\t') = self.next() {
+                    /*if let Some('\n') = self.peek() {
+                        tokens.push(Token::NewLine);
+                    }*/
+                }
                 return current_indent;
             } else {
                 break;
             }
         }
 
-        tokens.push(Token::NewLine);
 
         if new_indent > current_indent {
             for _ in current_indent..new_indent {
@@ -228,7 +232,7 @@ impl Lexer {
             }
         } else if new_indent < current_indent {
             for _ in new_indent..current_indent {
-                tokens.push(Token::DeIdent);
+                tokens.push(Token::DeIndent);
             }
         }
 

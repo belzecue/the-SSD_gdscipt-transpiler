@@ -126,11 +126,10 @@ impl<'a> Parser<'a> {
             args.push(Variable { name, type_, default_value })
         }
 
-        let type_ = if let Some(Token::Ctrl(ctrl)) = self.next() {
+        let type_ = if let Some(Token::Ctrl(ctrl)) = self.peek() {
             if &ctrl == "->" {
                 self.parse_type()
             } else {
-                self.pos -= 1;
                 Type::None
             }
         } else {
@@ -140,7 +139,6 @@ impl<'a> Parser<'a> {
         then_ctrl!(self, ":");
 
         then!(self, NewLine);
-        then!(self, Indent);
 
         let body = self.parse_block();
 
@@ -200,8 +198,10 @@ impl<'a> Parser<'a> {
                 "return" => self.parse_return(),
                 _ => self.parser_set_var_or_expr(),
             },
-            Token::Indent => Some(Node::Block(self.parse_block())),
-            Token::DeIdent => None,
+            Token::Indent => {
+                self.pos -= 1;
+                Some(Node::Block(self.parse_block()))
+            },
 
             Token::Comment(c) => Some(Node::Comment(c.to_string())),
             Token::NewLine => Some(Node::NewLine),
@@ -358,14 +358,14 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_block(&mut self) -> Vec<Node> {
+        then!(self, Indent);
         self.next();
 
         let mut body = vec![];
         while let Some(tok) = self.peek() {
             let start = self.pos;
 
-            //dbg!(self.pos, self.peek());
-            if Token::DeIdent == tok {
+            if Token::DeIndent == tok {
                 break;
             }
 
@@ -385,7 +385,6 @@ impl<'a> Parser<'a> {
                 body = body2;
             }
         }
-        //dbg!(self.pos, self.peek());
 
         body
     }
@@ -440,7 +439,7 @@ impl<'a> Parser<'a> {
         let mut elif = vec![];
         let mut or_else = vec![];
 
-        while let Some(Token::Identifier(ident)) = self.next() {
+        /*while let Some(Token::Identifier(ident)) = self.next() {
             if ident == "elif" {
                 self.next();
                 let cond = self.parse_expr();
@@ -457,7 +456,7 @@ impl<'a> Parser<'a> {
                 or_else = self.parse_block();
             }
         }
-        self.pos -= 1;
+        self.pos -= 1;*/
         
 
         Some(Node::If {
@@ -550,7 +549,7 @@ impl<'a> Parser<'a> {
     fn parse_return(&mut self) -> Option<Node> {
 
         let next = self.next();
-        let expr = if Some(Token::NewLine) != next && Some(Token::DeIdent) != next {
+        let expr = if Some(Token::NewLine) != next && Some(Token::DeIndent) != next {
             Some(self.parse_expr())
         } else {
             self.next();
