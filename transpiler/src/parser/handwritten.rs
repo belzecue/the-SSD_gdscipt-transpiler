@@ -95,8 +95,36 @@ impl<'a> Parser<'a> {
         };
 
         then_ctrl!(self, "(");
-        // TODO
-        then_ctrl!(self, ")");
+        let mut args = vec![];
+        while Some(Token::Ctrl(")".to_string())) != self.next() {
+            let Some(Token::Identifier(name)) = self.peek() else {
+                break;
+            };
+            
+            let mut next = self.next();
+            let type_ = if next == Some(Token::Ctrl(":".into())) {
+                next = self.next();
+                if next != Some(Token::Op("=".into())) {
+                    self.pos -= 1;
+                    let t = self.parse_type();
+                    next = self.next();
+                    t
+                } else {
+                    Type::Auto
+                }
+            } else {
+                Type::None
+            };
+    
+            let default_value = if next == Some(Token::Op("=".into())) {
+                self.next();
+                Some(self.parse_expr())
+            } else {
+                None
+            };
+
+            args.push(Variable { name, type_, default_value })
+        }
 
         let type_ = if let Some(Token::Ctrl(ctrl)) = self.next() {
             if &ctrl == "->" {
@@ -106,7 +134,6 @@ impl<'a> Parser<'a> {
                 Type::None
             }
         } else {
-            self.pos -= 1;
             Type::None
         };
 
@@ -119,7 +146,7 @@ impl<'a> Parser<'a> {
 
         TLNode::Function {
             name: func_name,
-            args: vec![],
+            args,
             return_type: type_,
             body,
         }
@@ -227,6 +254,7 @@ impl<'a> Parser<'a> {
 
         lhs
     }
+    
     fn parse_primary(&mut self) -> Expr {
         let node = match self.peek().unwrap() {
             Token::FPNumber(num) => Expr::FPNumber(num),
@@ -336,6 +364,7 @@ impl<'a> Parser<'a> {
         while let Some(tok) = self.peek() {
             let start = self.pos;
 
+            //dbg!(self.pos, self.peek());
             if Token::DeIdent == tok {
                 break;
             }
@@ -356,6 +385,7 @@ impl<'a> Parser<'a> {
                 body = body2;
             }
         }
+        //dbg!(self.pos, self.peek());
 
         body
     }
@@ -407,20 +437,34 @@ impl<'a> Parser<'a> {
 
         let body = self.parse_block();
 
-        // TODO elif and else
-        /*if let Some(Token::Identifier(ident)) = self.next() {
+        let mut elif = vec![];
+        let mut or_else = vec![];
+
+        while let Some(Token::Identifier(ident)) = self.next() {
             if ident == "elif" {
+                self.next();
+                let cond = self.parse_expr();
 
+                peek_ctrl!(self, ":");
+                then!(self, NewLine);
+
+                let body = self.parse_block();
+                elif.push((cond, body));
             } else if ident == "else" {
+                then_ctrl!(self, ":");
+                then!(self, NewLine);
 
+                or_else = self.parse_block();
             }
-        };*/
+        }
+        self.pos -= 1;
+        
 
         Some(Node::If {
             condition,
             body,
-            elif: vec![],
-            or_else: vec![],
+            elif,
+            or_else,
         })
     }
 

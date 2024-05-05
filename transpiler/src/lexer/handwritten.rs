@@ -332,15 +332,19 @@ impl Lexer {
 
         if !OPERATORS.contains(&op_string.as_str()) {
             op_string.remove(op_string.len() - p3.len_utf8());
+            self.pos -= 1;
 
             if !OPERATORS.contains(&op_string.as_str()) {
                 op_string.remove(op_string.len() - p2.len_utf8());
+                self.pos -= 1;
             }
 
             if !OPERATORS.contains(&op_string.as_str()) {
                 panic!()
             }
         }
+        self.pos += 1;
+        
         return Token::Op(op_string);
     }
 }

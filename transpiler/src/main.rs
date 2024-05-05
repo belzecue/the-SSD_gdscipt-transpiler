@@ -21,7 +21,7 @@ fn main() {
 
     let rust_src = transformer::rust_ast::get_rust_src(ast);
     println!("{rust_src}");
-    /*let path = "gdext-lib/src/example.rs";
+    let path = "gdext-lib/src/example.rs";
     fs::write(path, rust_src).unwrap();
 
     env::set_var("__CARGO_FIX_YOLO", "1");
@@ -44,5 +44,5 @@ fn main() {
         .spawn()
         .unwrap()
         .wait()
-        .unwrap();*/
+        .unwrap();
 }
