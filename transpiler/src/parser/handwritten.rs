@@ -123,18 +123,22 @@ impl<'a> Parser<'a> {
                 None
             };
 
-            args.push(Variable { name, type_, default_value })
+            args.push(Variable { name, type_, default_value });
         }
 
-        let type_ = if let Some(Token::Ctrl(ctrl)) = self.peek() {
-            if &ctrl == "->" {
-                self.parse_type()
-            } else {
-                Type::None
-            }
+        if Some(Token::Ctrl("->".into())) == self.peek() {
+            self.pos -= 1;
+        } else if Some(Token::Ctrl(":".into())) == self.peek() {
+            self.pos -= 1;
+        }
+
+        let type_ = if Some(Token::Ctrl("->".into())) == self.next() {
+            self.parse_type()
         } else {
+            self.pos -= 1;
             Type::None
         };
+
 
         then_ctrl!(self, ":");
 
@@ -314,14 +318,18 @@ impl<'a> Parser<'a> {
                     let rhs = self.parse_expr_bp(r_bp);
                     return Expr::BitNeg(Box::new(rhs));
                 }
+                op => panic!("{op}"),
+            },
+
+            Token::Ctrl(ctrl) => match ctrl.as_str() {
                 "(" => {
                     self.next();
                     let lhs = self.parse_expr_bp(0);
                     self.next();
                     return lhs;
                 }
-                op => panic!("{op}"),
-            },
+                c => panic!("{c}"),
+            }
 
             t => panic!("{t:?}"),
         };
