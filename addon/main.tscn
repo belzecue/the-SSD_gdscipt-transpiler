@@ -1,3 +1,6 @@
-[gd_scene format=3 uid="uid://dwfofirfegya0"]
+[gd_scene load_steps=2 format=3 uid="uid://dwfofirfegya0"]
 
-[node name="AutogenTest_rs" type="Node"]
+[ext_resource type="Script" path="res://bench.gd" id="1_4f6y7"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_4f6y7")

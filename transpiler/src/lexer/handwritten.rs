@@ -206,12 +206,14 @@ impl Lexer {
         }
         self.pos -= 1;
 
+        let mut comments = vec![];
+
         while let Some(char) = self.next() {
             // this should be 2 spaces instead of 1 but I am lazy
             if char == '\t' || char == ' ' {
                 new_indent += 1;
             } else if char == '#' {
-                tokens.push(self.comment());
+                comments.push(self.comment());
                 new_indent = 0;
             } else if char == '\\' {
                 while let Some(' ' | '\t') = self.next() {
@@ -235,6 +237,8 @@ impl Lexer {
                 tokens.push(Token::DeIndent);
             }
         }
+
+        tokens.append(&mut comments);
 
         new_indent
     }

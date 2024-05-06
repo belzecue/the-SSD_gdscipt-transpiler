@@ -25,9 +25,7 @@ macro_rules! peek_ctrl {
 
 macro_rules! then {
     ($self: tt, $tok: tt) => {
-        let Some(Token::$tok) = $self.next() else {
-            panic!()
-        };
+        assert_eq!(Some(Token::$tok), $self.next());
     };
 }
 /*

@@ -11,7 +11,7 @@ impl Display for Expr {
             Expr::Neg(stmt) => write!(f, "(-{stmt})"),
             Expr::BitNeg(stmt) => write!(f, "(!{stmt})"),
             Expr::Op { lhs, op, rhs } => write!(f, "({lhs} {op} {rhs})"),
-            Expr::Call { name, args } => write!(f, "{name}{}", args.to_string()),
+            Expr::Call { name, args } => write!(f, "self.{name}({})", args.to_string()),
         }
     }
 }
@@ -24,14 +24,14 @@ trait ToString {
 impl ToString for Vec<Variable> {
     fn to_string(&self) -> String {
         let mut ret_str = String::new();
-        ret_str += "(";
+        //ret_str += "(";
         let mut str = "";
         for stmt in self {
             ret_str += str;
             ret_str += &stmt.to_string();
             str = ",";
         }
-        ret_str += ")";
+        //ret_str += ")";
 
         ret_str
     }
@@ -39,14 +39,14 @@ impl ToString for Vec<Variable> {
 impl ToString for Vec<Expr> {
     fn to_string(&self) -> String {
         let mut ret_str = String::new();
-        ret_str += "(";
+        //ret_str += "(";
         let mut str = "";
         for stmt in self {
             ret_str += str;
             ret_str += &stmt.to_string();
             str = ",";
         }
-        ret_str += ")";
+        //ret_str += ")";
 
         ret_str
     }
@@ -297,7 +297,7 @@ impl Display for Item {
             } => {
                 write!(
                     f,
-                    "fn {name}{} -> {return_type} {{\n {} \n}}\n",
+                    "fn {name}(&mut self, {}) -> {return_type} {{\n {} \n}}\n",
                     args.to_string(),
                     body.to_string()
                 )

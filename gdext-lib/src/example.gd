@@ -1,13 +1,12 @@
 class_name Test
 extends Node
 
-func test(test_arg: int) -> int:
-  var test_var := 0
-  if test_arg == 5:
-    if true:
-      test_var = 1
-  elif true:
-    pass
-  else:
-    pass
-  return test_var
+func fib() -> int:
+	var n1 := 0
+	var n2 := 1
+	for i in range(0, 1000000):
+		var n := n2
+		n2 = n2 + n1
+		n1 = n
+
+	return n2
