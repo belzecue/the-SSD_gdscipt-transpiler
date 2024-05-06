@@ -1,5 +1,5 @@
 use std::{
-    env, fs,
+    fs,
     process::{Command, Stdio},
 };
 
@@ -24,7 +24,7 @@ fn main() {
     let path = "gdext-lib/src/example.rs";
     fs::write(path, rust_src).unwrap();
 
-    env::set_var("__CARGO_FIX_YOLO", "1");
+    //env::set_var("__CARGO_FIX_YOLO", "1");
     Command::new("cargo")
         .args([
             "clippy",

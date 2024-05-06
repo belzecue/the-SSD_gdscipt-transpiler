@@ -16,9 +16,13 @@ cd gdscript-transpiler
 ## Usage
 This isn't meant to be used by regular Godot devs yet.
 
+runninng `cargo run` will compile example.gd into example.rs (see gdext-lib/src)
+see also the addon
+
 ## Roadmap
 - [X] Proof of Concept
-- [ ] Addon
+- [X] Addon
+- [ ] Type system
 - [ ] MVP (a little useable)
 - [ ] Useable (pass all godot tests)
 

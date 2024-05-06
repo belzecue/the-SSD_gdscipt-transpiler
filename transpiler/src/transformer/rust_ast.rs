@@ -263,12 +263,13 @@ impl Display for Variable {
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Type::None => write!(f, "Option<Gd<Variant>>"),
+            Type::None => write!(f, "()"), // TODO
             Type::Auto => write!(f, "_"),
             Type::Some(type_) => {
                 let type_ = match type_.as_str() {
                     "int" => "i64",
                     "float" => "f64",
+                    "void" => "()",
                     _ => todo!(),
                 };
                 write!(f, "{type_}")
@@ -346,13 +347,13 @@ use godot::prelude::*;
 
 #[derive(GodotClass)]
 #[class(init, base={extends})]
-struct {class_name} {{
+struct {class_name}_rs {{
 // TODO vars
 base: Base<{extends}>
 }}
 
 #[godot_api]
-impl {class_name} {{
+impl {class_name}_rs {{
 {functions}
 }}
 

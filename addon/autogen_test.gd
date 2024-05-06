@@ -1,5 +1,7 @@
 #[autogen]
+class_name AutogenTest
 extends Node
+
 
 func _ready() -> void:
 	pass # Replace with function body.
@@ -9,3 +11,5 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	pass
 
+func test():
+	pass

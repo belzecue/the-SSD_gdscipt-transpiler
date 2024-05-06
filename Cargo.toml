@@ -1,9 +1,5 @@
 [workspace]
 resolver = "2"
-members = [ "macros",
-    "transpiler",
-    "macros",
-    "gdext-lib"
-]
+members = ["macros", "transpiler", "macros", "gdext-lib", "addon/addons/transpiler/rust"]
 
 default-members = ["transpiler"]
