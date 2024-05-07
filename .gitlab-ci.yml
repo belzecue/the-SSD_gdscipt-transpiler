@@ -7,11 +7,25 @@ stages:
   - test
   - build
 
-test:
+test_lexer:
     stage: test
     script:
       - rustc --version && cargo --version  # Print version info for debugging
-      - cargo test --workspace --verbose --ignore parser
+      - cargo test --workspace --verbose --test lexer
+
+test_parser:
+    stage: test
+    allow_failure: true
+    script:
+      - rustc --version && cargo --version  # Print version info for debugging
+      - cargo test --workspace --verbose --test parser
+
+test_codegen:
+    stage: test
+    allow_failure: true
+    script:
+      - rustc --version && cargo --version  # Print version info for debugging
+      - cargo test --workspace --verbose --test codegen
 
 
 build:
@@ -21,3 +35,26 @@ build:
       - cargo run
       - cargo build -p gdext-lib
 
+
+
+#https://stackoverflow.com/questions/74881598/how-to-speed-up-gitlab-ci-job-with-cache-and-artifacts
+cache: &global_cache          # Default cache configuration with YAML variable
+                              # `global_cache` pointing to this block
+
+  key: ${CI_COMMIT_REF_SLUG}  # Share cache between all jobs on one branch/tag
+
+  paths:                      # Paths to cache
+    - .cargo/
+    - target/
+#    - .cargo/bin
+#    - .cargo/registry/index
+#    - .cargo/registry/cache
+#    - target/debug/deps
+#    - target/debug/build
+  policy: pull-push           # All jobs not setup otherwise pull from and push to the cache
+
+variables:
+  CARGO_HOME: ${CI_PROJECT_DIR}/.cargo # Move cargo data into the project
+
+# todo:
+# https://parsiya.net/blog/2021-10-11-modify-gitlab-repositories-from-the-ci-pipeline/
