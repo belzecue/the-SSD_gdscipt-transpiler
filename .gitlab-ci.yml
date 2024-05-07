@@ -1,0 +1,23 @@
+# This specific template is from:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Rust.gitlab-ci.yml
+
+image: "rust:latest"
+
+stages:
+  - test
+  - build
+
+test:
+    stage: test
+    script:
+      - rustc --version && cargo --version  # Print version info for debugging
+      - cargo test --workspace --verbose --ignore parser
+
+
+build:
+    stage: build
+    script:
+      - rustc --version && cargo --version  # Print version info for debugging
+      - cargo run
+      - cargo build -p gdext-lib
+
