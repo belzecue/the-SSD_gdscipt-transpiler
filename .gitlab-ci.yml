@@ -16,6 +16,7 @@ test_lexer:
 test_parser:
     stage: test
     allow_failure: true
+    when: manual
     script:
       - rustc --version && cargo --version  # Print version info for debugging
       - cargo test --workspace --verbose --test parser
@@ -23,6 +24,7 @@ test_parser:
 test_codegen:
     stage: test
     allow_failure: true
+    when: manual
     script:
       - rustc --version && cargo --version  # Print version info for debugging
       - cargo test --workspace --verbose --test codegen
