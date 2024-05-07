@@ -10,4 +10,4 @@ fn run_test(path: &str) {
     let _rust_src = transformer::rust_ast::get_rust_src(ast);
 }
 
-//macros::make_tests!();
+macros::make_tests!();
