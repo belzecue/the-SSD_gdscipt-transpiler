@@ -1,7 +1,8 @@
 @tool
 extends EditorPlugin
 
-var last_selected: TreeItem
+#var last_selected: TreeItem
+var logo = preload("res://addons/transpiler/rustacean-flat-happy.svg")
 
 func _enter_tree():
 	var fs = EditorInterface.get_file_system_dock()
@@ -9,17 +10,15 @@ func _enter_tree():
 	var tree = fs.get_child(3).get_child(0) as Tree
 	
 	menu.id_pressed.connect(_pressed)
-	tree.multi_selected.connect(_selected)
+	tree.deselect_all()
 	resource_saved.connect(_on_resource_saved)
 
 func _pressed(id: int):
 	if id == 100:
-		generate(get_path_from_item(last_selected))
-
-
-func _selected(item: TreeItem, colom: int, selected: bool):
-	if selected:
-		last_selected = item
+		var fs = EditorInterface.get_file_system_dock()
+		var tree = fs.get_child(3).get_child(0) as Tree
+		var selected = tree.get_selected()
+		generate(get_path_from_item(selected))
 
 func _on_resource_saved(res):
 	if res is GDScript:
@@ -30,14 +29,17 @@ func _process(delta: float) -> void:
 	var fs = EditorInterface.get_file_system_dock()
 	var menu = fs.get_child(2) as PopupMenu
 	var tree = fs.get_child(3).get_child(0) as Tree
-	#print(menu.item_count)
+	#print(menu.item_count)Tree
+	var selected = tree.get_selected()
+	
 	if (
 		menu.visible 
-		and menu.item_count == 17
-		and last_selected.get_text(0).ends_with(".gd")
-		#and menu.get_item_text(0) == "Open"
+		and menu.get_item_index(100) == -1
+		and selected.get_text(0).ends_with(".gd")
 	):
-		menu.add_item("Translate To Rust", 100)
+		#menu.add_item("Translate To Rust", 100)
+		
+		menu.add_icon_item(logo, "Translate To Rust", 100)
 		menu.popup()
 	
 
@@ -57,7 +59,6 @@ func _exit_tree():
 	var tree = fs.get_child(3).get_child(0) as Tree
 	
 	menu.id_pressed.disconnect(_pressed)
-	tree.multi_selected.disconnect(_selected)
 	resource_saved.disconnect(_on_resource_saved)
 
 
@@ -79,7 +80,7 @@ func generate(path: String):
 	#	"clippy", 
 	#	"--allow-dirty", 
 	#	"--manifest-path", 
-	#	"addons/transpiler/rust/Cargo.toml",
+	#	"rust/Cargo.toml",
 	#	"--fix"
 	#])
 	
@@ -87,12 +88,12 @@ func generate(path: String):
 	OS.execute("cargo", [
 		"build", 
 		"--manifest-path", 
-		"addons/transpiler/rust/Cargo.toml",
+		"rust/Cargo.toml",
 		"--target-dir",
-		"addons/transpiler/rust/target"
+		"rust/target"
 	])
 	
 
 
 func make_rust_file(path: String) -> String:
-	return "res://addons/transpiler/rust/src/" + path.substr(6, path.length() - 8) + "rs"
+	return "res://rust/src/" + path.substr(6, path.length() - 8) + "rs"
